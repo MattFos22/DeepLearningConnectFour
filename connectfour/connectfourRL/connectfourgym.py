@@ -39,39 +39,34 @@ while not game_over:#
 		if event.type == pygame.QUIT:
 			cf.sys.exit()
 
-		if event.type == pygame.MOUSEMOTION:
-			pygame.draw.rect(screen, cf.BLACK, (0,0, width, cf.SQUARESIZE))
-			posx = event.pos[0]
-			if turn == cf.PLAYER:
-				pygame.draw.circle(screen, cf.RED, (posx, int(cf.SQUARESIZE/2)), cf.RADIUS)
+		# if event.type == pygame.MOUSEMOTION:
+		# 	pygame.draw.rect(screen, cf.BLACK, (0,0, width, cf.SQUARESIZE))
+		# 	posx = event.pos[0]
+		# 	if turn == cf.PLAYER:
+		# 		pygame.draw.circle(screen, cf.RED, (posx, int(cf.SQUARESIZE/2)), cf.RADIUS)
 
 		pygame.display.update()
 
-		if event.type == pygame.MOUSEBUTTONDOWN:
-			pygame.draw.rect(screen, cf.BLACK, (0,0, width, cf.SQUARESIZE))
-			if turn == cf.PLAYER:
-				# select_action
-				# execute the action
+		if turn == cf.PLAYER:
+			# select_action
+			# execute the action
+			action = ql.select_action(board)
+			cf.drop_piece(board, action.get('row'), action.get('col'), cf.PLAYER_PIECE)
 
+			if cf.is_valid_location(board, col):
+				row = cf.get_next_open_row(board, col)
+				cf.drop_piece(board, row, col, cf.PLAYER_PIECE)
 
+				if cf.winning_move(board, cf.PLAYER_PIECE):
+					label = myfont.render("Player 1 wins!!", 1, cf.RED)
+					screen.blit(label, (40,10))
+					game_over = True
 
-				posx = event.pos[0]
-				col = int(math.floor(posx/cf.SQUARESIZE))
+				turn += 1
+				turn = turn % 2
 
-				if cf.is_valid_location(board, col):
-					row = cf.get_next_open_row(board, col)
-					cf.drop_piece(board, row, col, cf.PLAYER_PIECE)
-
-					if cf.winning_move(board, cf.PLAYER_PIECE):
-						label = myfont.render("Player 1 wins!!", 1, cf.RED)
-						screen.blit(label, (40,10))
-						game_over = True
-
-					turn += 1
-					turn = turn % 2
-
-					cf.print_board(board)
-					cf.draw_board(board, screen, height)
+				cf.print_board(board)
+				cf.draw_board(board, screen, height)
 
 
 		# # Ask for Player 2 Input
