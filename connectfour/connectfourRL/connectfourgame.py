@@ -31,7 +31,7 @@ class ConnectFourGame:
 		board[row][col] = piece
 
 	def is_valid_location(self, board, col):
-		return board[self.ROW_COUNT-1][col] == 0
+		return col < 8 and board[self.ROW_COUNT-1][col] == 0
 
 	def get_next_open_row(self, board, col):
 		for r in range(self.ROW_COUNT):

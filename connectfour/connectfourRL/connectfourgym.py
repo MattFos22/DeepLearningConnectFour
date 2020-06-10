@@ -4,95 +4,87 @@ import random
 import pygame
 import sys
 import math
+import copy
 
-# Yes, this is horrible. This is purely to help my small brain model the domains - Simulation, Game and rewards.
-# Do not emulate
-# This is the simulation!
-cf = connectfourgame.ConnectFourGame()
-board = cf.create_board()
-cf.print_board(board)
-game_over = False
 
-# add the learner
-ql = connectfourqlearner.ConnectFourQLearner(board)
-
-pygame.init()
-
-width = cf.COLUMN_COUNT * cf.SQUARESIZE
-height = (cf.ROW_COUNT+1) * cf.SQUARESIZE
-
-size = (width, height)
-
-screen = pygame.display.set_mode(size)
-cf.draw_board(board, screen, height)
-pygame.display.update()
-
-myfont = pygame.font.SysFont("monospace", 75)
-
-turn = random.randint(cf.PLAYER, cf.AI)
+class ConnectFourGym:
+	def __init__(self, numberOfGames):
+		cf = connectfourgame.ConnectFourGame()
+		ql = connectfourqlearner.ConnectFourQLearner()
+		for x in range(numberOfGames):
+			self.playGame(cf, ql)
 
 # Put our learning ai in initial state
+	def playGame(self, cf, ql):
+		board = cf.create_board()
+		cf.print_board(board)
+		game_over = False
+		pygame.init()
 
-while not game_over:#
+		width = cf.COLUMN_COUNT * cf.SQUARESIZE
+		height = (cf.ROW_COUNT+1) * cf.SQUARESIZE
 
-	for event in pygame.event.get():
-		if event.type == pygame.QUIT:
-			cf.sys.exit()
+		size = (width, height)
 
-		# if event.type == pygame.MOUSEMOTION:
-		# 	pygame.draw.rect(screen, cf.BLACK, (0,0, width, cf.SQUARESIZE))
-		# 	posx = event.pos[0]
-		# 	if turn == cf.PLAYER:
-		# 		pygame.draw.circle(screen, cf.RED, (posx, int(cf.SQUARESIZE/2)), cf.RADIUS)
-
+		screen = pygame.display.set_mode(size)
+		cf.draw_board(board, screen, height)
 		pygame.display.update()
 
-		if turn == cf.PLAYER:
-			# select_action
-			# execute the action
-			action = ql.select_action(board)
-			cf.drop_piece(board, action.get('row'), action.get('col'), cf.PLAYER_PIECE)
+		myfont = pygame.font.SysFont("monospace", 75)
 
-			if cf.is_valid_location(board, col):
-				row = cf.get_next_open_row(board, col)
-				cf.drop_piece(board, row, col, cf.PLAYER_PIECE)
+		turn = random.randint(cf.PLAYER, cf.AI)
 
-				if cf.winning_move(board, cf.PLAYER_PIECE):
-					label = myfont.render("Player 1 wins!!", 1, cf.RED)
-					screen.blit(label, (40,10))
-					game_over = True
+		while not game_over:#
+			for event in pygame.event.get():
+				previousBoard = copy.deepcopy(board[0:len(board)])
+				if event.type == pygame.QUIT:
+					cf.sys.exit()
 
-				turn += 1
-				turn = turn % 2
+				pygame.display.update()
 
-				cf.print_board(board)
-				cf.draw_board(board, screen, height)
+				if turn == cf.PLAYER and not game_over:
+					action = {'col' : 99 }
+					while(not cf.is_valid_location(board, action.get('col'))): #sort this mess out to not call the function twice
+						action = ql.select_action(board)
+						if(cf.is_valid_location(board, action.get('col'))):
+							break
 
+					row = cf.get_next_open_row(board, action.get('col'))
+					cf.drop_piece(board, row, action.get('col'), cf.PLAYER_PIECE)
+					result = {"gameOver":False}
+					if cf.winning_move(board, cf.PLAYER_PIECE):
+						label = myfont.render("Player 1 wins!!", 1, cf.RED)
+						result = {"gameOver":True, "winner":1}
+						screen.blit(label, (40,10))
+						game_over = True
 
-		# # Ask for Player 2 Input
-		if turn == cf.AI and not game_over:
+					ql.learn(board, previousBoard, action.get('col'), result)
+					turn += 1
+					turn = turn % 2
 
-			#col = random.randint(0, COLUMN_COUNT-1)
-			#col = pick_best_move(board, AI_PIECE)
-			print("AI TURN!")
-			col, minimax_score = cf.minimax(board, 5, -math.inf, math.inf, True)
+					cf.print_board(board)
+					cf.draw_board(board, screen, height)
 
-			if cf.is_valid_location(board, col):
-				#pygame.time.wait(500)
-				row = cf.get_next_open_row(board, col)
-				print("dropping here: "+ str(row))
-				cf.drop_piece(board, row, col, cf.AI_PIECE)
+				if turn == cf.AI and not game_over:
 
-				if cf.winning_move(board, cf.AI_PIECE):
-					label = myfont.render("Player 2 wins!!", 1, cf.YELLOW)
-					screen.blit(label, (40,10))
-					game_over = True
+					print("AI TURN!")
+					col, minimax_score = cf.minimax(board, 5, -math.inf, math.inf, True)
 
-				cf.print_board(board)
-				cf.draw_board(board, screen, height)
+					if cf.is_valid_location(board, col):
+						row = cf.get_next_open_row(board, col)
+						print("dropping here: "+ str(row))
+						cf.drop_piece(board, row, col, cf.AI_PIECE)
+						result = {"gameOver":False}
 
-				turn += 1
-				turn = turn % 2
+						if cf.winning_move(board, cf.AI_PIECE):
+							label = myfont.render("Player 2 wins!!", 1, cf.YELLOW)
+							screen.blit(label, (40,10))
+							game_over = True
+							result = {"gameOver":True, "winner":2}
 
-		if game_over:
-			pygame.time.wait(3000)
+						ql.learn(board, previousBoard, col, result)
+						cf.print_board(board)
+						cf.draw_board(board, screen, height)
+
+						turn += 1
+						turn = turn % 2
