@@ -24,6 +24,11 @@ class ConnectFourQLearner:
         self.total_reward = 0
         self.actions = [0,1,2,3,4,5,6]
 
+        with open('dict.csv') as csv_file:
+            reader = csv.reader(csv_file)
+            self.q = dict(reader)
+
+
     def select_action(self, state):
         # Select a random action
         if random.random() < self.explore_rate:
@@ -72,9 +77,6 @@ class ConnectFourQLearner:
             writer = csv.writer(csv_file)
             for key, value in self.q.items():
                 writer.writerow([key, value])
-
-    def loadLearnings(self):
-        #stufffff
 
     def get_explore_rate(self, t):
         return max(self.MIN_EXPLORE_RATE, min(0.8, 1.0 - math.log10((t+1)/0.99)))

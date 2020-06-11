@@ -8,9 +8,11 @@ import copy
 
 
 class ConnectFourGym:
-	def __init__(self, numberOfGames):
+	def __init__(self, numberOfGames, player1, player2):
 		cf = connectfourgame.ConnectFourGame()
 		ql = connectfourqlearner.ConnectFourQLearner()
+		self.player1 = player1
+		self.player2 = player2
 		for x in range(numberOfGames):
 			self.playGame(cf, ql)
 
@@ -45,7 +47,7 @@ class ConnectFourGym:
 				if turn == cf.PLAYER and not game_over:
 					action = {'col' : 99 }
 					while(not cf.is_valid_location(board, action.get('col'))): #sort this mess out to not call the function twice
-						action = ql.select_action(board)
+						action = self.player1.select_action(ql.q, board, cf.ACTIONS)
 						if(cf.is_valid_location(board, action.get('col'))):
 							break
 
@@ -57,6 +59,10 @@ class ConnectFourGym:
 						result = {"gameOver":True, "winner":1}
 						screen.blit(label, (40,10))
 						game_over = True
+						print("ai 1 won")
+					if cf.checkForDraw(board):
+						print("it was a draw")
+						result = {"gameOver":True, "winner":0}
 
 					ql.learn(board, previousBoard, action.get('col'), result)
 					turn += 1
@@ -66,25 +72,29 @@ class ConnectFourGym:
 					cf.draw_board(board, screen, height)
 
 				if turn == cf.AI and not game_over:
-
 					print("AI TURN!")
-					col, minimax_score = cf.minimax(board, 5, -math.inf, math.inf, True)
+					action = {'col' : 99 }
+					while(not cf.is_valid_location(board, action.get('col'))): #sort this mess out to not call the function twice
+						action = self.player2.select_action(ql.q, board, cf.ACTIONS)
+						if(cf.is_valid_location(board, action.get('col'))):
+							break
 
-					if cf.is_valid_location(board, col):
-						row = cf.get_next_open_row(board, col)
-						print("dropping here: "+ str(row))
-						cf.drop_piece(board, row, col, cf.AI_PIECE)
-						result = {"gameOver":False}
+					row = cf.get_next_open_row(board, action.get('col'))
+					cf.drop_piece(board, row, action.get('col'), cf.AI_PIECE)
+					result = {"gameOver":False}
+					if cf.winning_move(board, cf.AI_PIECE):
+						label = myfont.render("Player 2 wins!!", 1, cf.YELLOW)
+						screen.blit(label, (40,10))
+						game_over = True
+						result = {"gameOver":True, "winner":2}
+						print("AI2 won")
+					if cf.checkForDraw(board):
+						print("it was a draw")
+						result = {"gameOver":True, "winner":0}
 
-						if cf.winning_move(board, cf.AI_PIECE):
-							label = myfont.render("Player 2 wins!!", 1, cf.YELLOW)
-							screen.blit(label, (40,10))
-							game_over = True
-							result = {"gameOver":True, "winner":2}
+					ql.learn(board, previousBoard, action.get('col'), result)
+					cf.print_board(board)
+					cf.draw_board(board, screen, height)
 
-						ql.learn(board, previousBoard, col, result)
-						cf.print_board(board)
-						cf.draw_board(board, screen, height)
-
-						turn += 1
-						turn = turn % 2
+					turn += 1
+					turn = turn % 2

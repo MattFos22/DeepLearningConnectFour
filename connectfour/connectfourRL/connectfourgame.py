@@ -21,6 +21,7 @@ class ConnectFourGame:
 		self.WINDOW_LENGTH = 4
 		self.SQUARESIZE = 100
 		self.RADIUS = int(self.SQUARESIZE/2 - 5)
+		self.ACTIONS = [0,1,2,3,4,5,6]
 
 
 	def create_board(self):
@@ -37,6 +38,12 @@ class ConnectFourGame:
 		for r in range(self.ROW_COUNT):
 			if board[r][col] == 0:
 				return r
+
+	def checkForDraw(self, board):
+		isDraw = True
+		for action in self.ACTIONS:
+			isDraw = not self.is_valid_location(board, action)
+		return isDraw
 
 	def print_board(self, board):
 		print(np.flip(board, 0))
