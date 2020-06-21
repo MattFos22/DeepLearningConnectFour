@@ -29,16 +29,6 @@ class ConnectFourQLearner:
             self.q = dict(reader)
 
 
-    def select_action(self, state):
-        # Select a random action
-        if random.random() < self.explore_rate:
-            return {'col' : random.randint(0,6) }
-        # Select the action with the highest q
-        else:
-            stateSanitized = tuple(tuple(x) for x in state)
-            qs = [self.getQ(stateSanitized, a) for a in self.actions]
-        return {'col' : int(max(qs)) }
-
     def getQ(self, state, action):
         """
         Return a probability for a given state and action where the greater
